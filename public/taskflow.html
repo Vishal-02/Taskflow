@@ -1,0 +1,2028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Taskflow</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Taskflow">
+<meta name="theme-color" content="#0e0e0f">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0f;
+    --surface: #161618;
+    --surface2: #1e1e21;
+    --border: #2a2a2e;
+    --text: #f0ede8;
+    --text-muted: #6b6872;
+    --text-dim: #3d3a44;
+    --accent: #c8f06e;
+    --accent-dim: #1f2e0d;
+    --waiting: #f0a04b;
+    --waiting-dim: #2e1f0a;
+    --danger: #e05555;
+    --p1: #e05555;
+    --p2: #f0a04b;
+    --p3: #c8f06e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Instrument Serif', serif;
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .logo span { color: var(--accent); font-style: italic; }
+
+  .nav-pills {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  .nav-pill {
+    padding: 6px 16px;
+    border-radius: 7px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.2s;
+  }
+
+  .nav-pill.active {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .nav-pill:hover:not(.active) { color: var(--text); }
+
+  /* VIEWS */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* TASK PAGES */
+  .pages-wrapper {
+    overflow: hidden;
+    position: relative;
+    height: calc(100vh - 65px);
+  }
+
+  .pages-track {
+    display: flex;
+    width: 200%;
+    height: 100%;
+    transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .page {
+    width: 50%;
+    height: 100%;
+    overflow-y: auto;
+    padding: 28px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  /* PAGE HEADER */
+  .page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .page-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .page-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 2rem;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .page-title.now { color: var(--accent); }
+  .page-title.waiting { color: var(--waiting); }
+
+  .page-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: all 0.18s;
+  }
+
+  .btn:hover { background: var(--surface2); border-color: #444; }
+
+  .btn.primary {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .btn.primary:hover { background: #2a3d10; }
+
+  .btn.waiting-btn {
+    background: var(--waiting-dim);
+    border-color: var(--waiting);
+    color: var(--waiting);
+  }
+
+  .btn.waiting-btn:hover { background: #3d2a0d; }
+
+  /* SWIPE HINT */
+  .swipe-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    transition: all 0.18s;
+  }
+
+  .swipe-hint:hover { color: var(--text-muted); border-color: #444; }
+
+  /* TASK CARD */
+  .task-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .task-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .task-card:hover { border-color: #3a3a40; background: var(--surface2); }
+
+  .task-card.timer-expired {
+    border-color: var(--waiting);
+    box-shadow: 0 0 0 1px var(--waiting), 0 0 20px -5px var(--waiting);
+    animation: pulse-waiting 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-waiting {
+    0%, 100% { box-shadow: 0 0 0 1px var(--waiting), 0 0 20px -5px var(--waiting); }
+    50% { box-shadow: 0 0 0 1px var(--waiting), 0 0 35px -2px var(--waiting); }
+  }
+
+  .task-card.completing {
+    opacity: 0;
+    transform: translateX(40px) scale(0.95);
+    transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .priority-bar {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    border-radius: 12px 0 0 12px;
+  }
+
+  .p1 .priority-bar { background: var(--p1); }
+  .p2 .priority-bar { background: var(--p2); }
+  .p3 .priority-bar { background: var(--p3); }
+
+  .check-wrap { flex-shrink: 0; margin-top: 2px; }
+
+  .checkbox {
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--border);
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.18s;
+    background: transparent;
+  }
+
+  .checkbox:hover { border-color: var(--accent); }
+  .checkbox svg { display: none; }
+
+  .checkbox.checked {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .checkbox.checked.deleted-check {
+    background: var(--danger);
+    border-color: var(--danger);
+  }
+
+  .checkbox.checked svg { display: block; }
+
+  .task-body { flex: 1; min-width: 0; }
+
+  .task-title {
+    font-size: 0.88rem;
+    font-weight: 400;
+    color: var(--text);
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  .task-notes {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 5px;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  .task-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .priority-badge {
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+
+  .badge-p1 { background: #2a0f0f; color: var(--p1); border: 1px solid #4a1515; }
+  .badge-p2 { background: #2a1a05; color: var(--p2); border: 1px solid #4a2f0a; }
+  .badge-p3 { background: #1a2a05; color: var(--p3); border: 1px solid #2f4a0a; }
+
+  .timer-badge {
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--waiting-dim);
+    color: var(--waiting);
+    border: 1px solid #4a2f10;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .timer-badge.expired { animation: pulse-text 1.5s ease-in-out infinite; }
+
+  @keyframes pulse-text {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .task-actions {
+    display: grid;
+    grid-template-columns: 28px 28px;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .icon-btn {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: all 0.18s;
+  }
+
+  .icon-btn:hover { background: var(--surface2); color: var(--text); }
+  .icon-btn.delete:hover { border-color: var(--danger); color: var(--danger); }
+  .icon-btn.move:hover { border-color: var(--waiting); color: var(--waiting); }
+  .icon-btn.superset:hover { border-color: #7b8cde; color: #7b8cde; }
+
+  /* COMPLETION ANIMATION */
+  @keyframes checkmark-fill {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes card-fly-up {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    30% { opacity: 1; transform: translateY(-4px) scale(1.01); }
+    100% { opacity: 0; transform: translateY(-40px) scale(0.95); }
+  }
+
+  .task-card.completing-anim {
+    animation: card-fly-up 0.45s cubic-bezier(0.4,0,0.2,1) forwards;
+    pointer-events: none;
+  }
+
+  .checkbox.filling {
+    animation: checkmark-fill 0.25s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* SUPERSET INDENTED CHILDREN */
+  .superset-children {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+    padding-left: 20px;
+    position: relative;
+  }
+
+  .superset-child-wrap {
+    position: relative;
+  }
+
+  /* Vertical line — full height for all but last child */
+  .superset-child-wrap::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 0;
+    width: 2px;
+    height: 50%;
+    background: var(--accent);
+    opacity: 0.85;
+  }
+
+  .superset-child-wrap:not(:last-child)::before {
+    height: 100%;
+  }
+
+  /* Horizontal connector */
+  .superset-child-wrap::after {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 50%;
+    width: 12px;
+    height: 2px;
+    background: var(--accent);
+    opacity: 0.85;
+    transform: translateY(-50%);
+  }
+
+  /* PRIORITY BOXES */
+  .priority-boxes {
+    display: flex;
+    gap: 6px;
+  }
+
+  .priority-box {
+    flex: 1;
+    padding: 7px 0;
+    border-radius: 7px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.18s;
+    text-align: center;
+  }
+
+  .priority-box[data-val="p1"].active { background: #2a0f0f; color: var(--p1); border-color: #4a1515; }
+  .priority-box[data-val="p2"].active { background: #2a1a05; color: var(--p2); border-color: #4a2f0a; }
+  .priority-box[data-val="p3"].active { background: #1a2a05; color: var(--p3); border-color: #2f4a0a; }
+  .priority-box:hover:not(.active) { color: var(--text); border-color: #444; }
+
+  /* TRANSFERRED BADGE */
+  .transferred-badge {
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: #1a1a2e;
+    color: #7b8cde;
+    border: 1px solid #2a2a4e;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 24px;
+    text-align: center;
+    gap: 12px;
+    color: var(--text-dim);
+  }
+
+  .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 4px; }
+
+  .empty-state p {
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    line-height: 1.6;
+  }
+
+  /* GRAVEYARD */
+  .graveyard-view {
+    padding: 28px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .graveyard-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .completed-count {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .task-card.dead { opacity: 0.5; }
+  .task-card.dead:hover { opacity: 0.75; }
+
+  .task-title.struck {
+    text-decoration: line-through;
+    text-decoration-color: var(--text-muted);
+    color: var(--text-muted);
+  }
+
+  .completed-at {
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+    letter-spacing: 0.04em;
+  }
+
+  /* MODAL */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 460px;
+    animation: modal-in 0.25s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  @keyframes modal-in {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .modal-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    letter-spacing: -0.02em;
+  }
+
+  .form-group { margin-bottom: 16px; }
+
+  .form-label {
+    display: block;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .form-input, .form-textarea, .form-select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.18s;
+    resize: none;
+  }
+
+  .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: #555; }
+  .form-select option { background: var(--bg); }
+  .form-textarea { height: 80px; }
+
+  .timer-section { display: none; margin-top: 0; }
+  .timer-section.visible { display: block; }
+
+  .timer-type-btns { display: flex; gap: 4px; margin-bottom: 10px; }
+
+  .timer-type-btn {
+    flex: 1;
+    padding: 7px;
+    border-radius: 7px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.18s;
+  }
+
+  .timer-type-btn.active {
+    background: var(--waiting-dim);
+    border-color: var(--waiting);
+    color: var(--waiting);
+  }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .toggle-label { font-size: 0.72rem; color: var(--text-muted); }
+
+  .toggle {
+    width: 36px; height: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .toggle::after {
+    content: '';
+    position: absolute;
+    left: 3px; top: 3px;
+    width: 12px; height: 12px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+
+  .toggle.on { background: var(--waiting-dim); border-color: var(--waiting); }
+  .toggle.on::after { left: 19px; background: var(--waiting); }
+
+  .modal-footer {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn.cancel { color: var(--text-muted); }
+  .btn.cancel:hover { color: var(--text); }
+
+  input[type="time"], input[type="number"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.18s;
+    -webkit-appearance: none;
+  }
+
+  input[type="time"] { width: 100%; }
+  input[type="time"]:focus, input[type="number"]:focus { border-color: #555; }
+
+  .hours-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .hours-row input[type="number"] { width: 72px; }
+
+  /* TOAST */
+  .toast-wrap {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .toast {
+    background: var(--surface2);
+    border: 1px solid var(--waiting);
+    color: var(--waiting);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+    max-width: 300px;
+    animation: toast-in 0.3s cubic-bezier(0.4,0,0.2,1);
+    pointer-events: all;
+  }
+
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* DATE SEPARATOR */
+  .date-separator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0 10px;
+  }
+
+  .date-separator:first-child { margin-top: 0; }
+
+  .date-sep-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .date-sep-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* GROUP CONTAINER */
+  .group-container {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+
+  .group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--surface);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.18s;
+  }
+
+  .group-header:hover { background: var(--surface2); }
+
+  .group-chevron {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+    display: inline-block;
+  }
+
+  .group-name {
+    font-family: 'Instrument Serif', serif;
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+
+  .group-count {
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .group-body {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .group-body.collapsed { display: none; }
+
+  /* SUPERSET / DEPENDENCY STATES */
+  .task-card.blocked { opacity: 0.45; }
+  .task-card.unblocked { box-shadow: 0 0 0 1px var(--accent), 0 0 16px -6px var(--accent); border-color: var(--accent); }
+
+  .blocked-badge {
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: #2a0f0f;
+    color: var(--danger);
+    border: 1px solid #4a1515;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .unblocked-badge {
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid #2f4a0a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* DEPENDS ON LIST IN MODAL */
+  .depends-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 140px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .depends-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 0;
+  }
+
+  .depends-item input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
+  .depends-item:hover { color: var(--text); }
+
+  @media (max-width: 600px) {
+    .topbar { padding: 14px 16px; }
+    .page { padding: 18px; }
+    .graveyard-view { padding: 18px; }
+    .page-title { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">task<span>flow</span></div>
+  <div class="nav-pills">
+    <button class="nav-pill active" onclick="showView('tasks')">Tasks</button>
+    <button class="nav-pill" onclick="showView('valhalla')">Valhalla</button>
+    <button class="nav-pill" onclick="showView('graveyard')">Graveyard</button>
+  </div>
+</div>
+
+<!-- TASKS VIEW -->
+<div class="view active" id="view-tasks">
+  <div class="pages-wrapper" id="pagesWrapper">
+    <div class="pages-track" id="pagesTrack">
+
+      <!-- PAGE: NOW -->
+      <div class="page" id="page-now">
+        <div class="page-header">
+          <div class="page-title-block">
+            <div class="page-label">01 / active</div>
+            <div class="page-title now">Do it now.</div>
+          </div>
+          <div class="page-actions">
+            <div class="swipe-hint" onclick="goToPage(1)">Waiting →</div>
+            <button class="btn" onclick="openCreateGroupModal('now')" style="color:var(--text-muted);">+ Group</button>
+            <button class="btn primary" onclick="openAddModal('now')">+ Add</button>
+          </div>
+        </div>
+        <div class="task-list" id="list-now"></div>
+        <div class="empty-state" id="empty-now">
+          <div class="empty-icon">✦</div>
+          <p>No active tasks.<br>Add something to get started.</p>
+        </div>
+      </div>
+
+      <!-- PAGE: WAITING -->
+      <div class="page" id="page-waiting">
+        <div class="page-header">
+          <div class="page-title-block">
+            <div class="page-label">02 / waiting</div>
+            <div class="page-title waiting">On hold.</div>
+          </div>
+          <div class="page-actions">
+            <div class="swipe-hint" onclick="goToPage(0)">← Now</div>
+            <button class="btn" onclick="openCreateGroupModal('waiting')" style="color:var(--text-muted);">+ Group</button>
+            <button class="btn waiting-btn" onclick="openAddModal('waiting')">+ Add</button>
+          </div>
+        </div>
+        <div class="task-list" id="list-waiting"></div>
+        <div class="empty-state" id="empty-waiting">
+          <div class="empty-icon">◌</div>
+          <p>Nothing waiting.<br>Tasks blocked by others go here.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- VALHALLA VIEW -->
+<div class="view" id="view-valhalla">
+  <div class="graveyard-view">
+    <div class="graveyard-header">
+      <div>
+        <div class="page-label">Completed</div>
+        <div class="page-title" style="font-family:'Instrument Serif',serif;font-size:2rem;letter-spacing:-0.02em;color:var(--accent);">Valhalla. ⚔️</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="completed-count" id="valhalla-count">0 tasks</span>
+        <button class="btn" style="color:var(--danger);border-color:#3a1515;" onclick="clearAllValhalla()">Clear all</button>
+      </div>
+    </div>
+    <div class="task-list" id="list-valhalla"></div>
+    <div class="empty-state" id="empty-valhalla">
+      <div class="empty-icon">⚔️</div>
+      <p>No completed tasks yet.<br>Honourably finished tasks rest here.</p>
+    </div>
+  </div>
+</div>
+
+<!-- GRAVEYARD VIEW -->
+<div class="view" id="view-graveyard">
+  <div class="graveyard-view">
+    <div class="graveyard-header">
+      <div>
+        <div class="page-label">Deleted</div>
+        <div class="page-title" style="font-family:'Instrument Serif',serif;font-size:2rem;letter-spacing:-0.02em;">The graveyard. 🪦</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="completed-count" id="graveyard-count">0 tasks</span>
+        <button class="btn" style="color:var(--danger);border-color:#3a1515;" onclick="clearAllGraveyard()">Clear all</button>
+      </div>
+    </div>
+    <div class="task-list" id="list-graveyard"></div>
+    <div class="empty-state" id="empty-graveyard">
+      <div class="empty-icon">🪦</div>
+      <p>Nothing deleted yet.<br>Forgotten tasks end up here.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="overlay" id="taskOverlay" onclick="overlayClickClose(event)">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">New Task</div>
+
+    <div class="form-group">
+      <label class="form-label">Title</label>
+      <input class="form-input" id="inputTitle" type="text" placeholder="What needs to be done?" maxlength="120">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notes <span style="color:var(--text-dim)">(optional)</span></label>
+      <textarea class="form-textarea" id="inputNotes" placeholder="Any extra details..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Priority</label>
+      <div class="priority-boxes">
+        <button class="priority-box" data-val="p1" onclick="setPriority('p1')">High</button>
+        <button class="priority-box" data-val="p2" onclick="setPriority('p2')">Medium</button>
+        <button class="priority-box active" data-val="p3" onclick="setPriority('p3')">Low</button>
+      </div>
+      <input type="hidden" id="inputPriority" value="p3">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Group <span style="color:var(--text-dim)">(optional)</span></label>
+      <select class="form-select" id="inputGroup">
+        <option value="">— No group —</option>
+      </select>
+    </div>
+
+    <div class="form-group" id="parentCheckboxGroup" style="display:none;">
+      <div class="toggle-row">
+        <span class="toggle-label">This new task is the parent</span>
+        <div class="toggle" id="parentToggle" onclick="toggleParentMode()"></div>
+      </div>
+      <div style="font-size:0.65rem;color:var(--text-dim);margin-top:6px;letter-spacing:0.04em;">Turn on if the original task should depend on this one instead.</div>
+    </div>
+
+    <div class="form-group" id="timerToggleGroup" style="display:none;">
+      <div class="toggle-row">
+        <span class="toggle-label">Set a timer for this task</span>
+        <div class="toggle" id="timerToggle" onclick="toggleTimer()"></div>
+      </div>
+    </div>
+
+    <div class="form-group timer-section" id="timerSection">
+      <label class="form-label">Timer type</label>
+      <div class="timer-type-btns">
+        <button class="timer-type-btn active" id="btnDuration" onclick="setTimerType('duration')">In X hours</button>
+        <button class="timer-type-btn" id="btnTime" onclick="setTimerType('time')">At a time</button>
+      </div>
+      <div id="durationInput">
+        <div class="hours-row">
+          <input type="number" id="inputHours" min="0" max="999" value="1">
+          <span>hours</span>
+          <input type="number" id="inputMins" min="0" max="59" value="0">
+          <span>minutes</span>
+        </div>
+      </div>
+      <div id="timeInput" style="display:none;">
+        <input type="time" id="inputTime">
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" id="saveBtn" onclick="saveTask()">Save task</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- CREATE GROUP MODAL -->
+<div class="overlay" id="groupOverlay" onclick="if(event.target===this)closeGroupModal()">
+  <div class="modal">
+    <div class="modal-title">New Group</div>
+    <div class="form-group">
+      <label class="form-label">Group name</label>
+      <input class="form-input" id="inputGroupName" type="text" placeholder="e.g. Project Apollo" maxlength="60">
+    </div>
+    <div class="modal-footer">
+      <button class="btn cancel" onclick="closeGroupModal()">Cancel</button>
+      <button class="btn primary" onclick="saveGroup()">Create group</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let tasks = { now: [], waiting: [], done: [], deleted: [] };
+let groups = [];
+let collapsedGroups = new Set();
+let editingId = null;
+let modalType = 'now';
+let timerEnabled = false;
+let timerType = 'duration';
+let currentPage = 0;
+
+// API base — empty string means same host (served from the Pi itself)
+const API = '';
+
+async function apiLoad() {
+  try {
+    const [tasksRes, groupsRes] = await Promise.all([
+      fetch(API + '/api/tasks'),
+      fetch(API + '/api/groups')
+    ]);
+    const data = await tasksRes.json();
+    groups = await groupsRes.json();
+    const cutoff = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    const parse = arr => (arr || []).map(t => ({...t, dependsOn: JSON.parse(t.dependsOn || '[]')}));
+    tasks.now = parse(data.now);
+    tasks.waiting = parse(data.waiting);
+    const doneAll = parse(data.done);
+    const deletedAll = parse(data.deleted);
+    for (const t of [...doneAll, ...deletedAll]) {
+      if ((t.completedAt || 0) < cutoff) await apiDeleteTask(t.id);
+    }
+    tasks.done = doneAll.filter(t => (t.completedAt || 0) >= cutoff);
+    tasks.deleted = deletedAll.filter(t => (t.completedAt || 0) >= cutoff);
+  } catch(e) {
+    showToast('⚠ Could not reach server. Are you on the same network?');
+    tasks = { now: [], waiting: [], done: [], deleted: [] };
+    groups = [];
+  }
+}
+
+async function apiSaveTask(task) {
+  const payload = { ...task, dependsOn: JSON.stringify(task.dependsOn || []) };
+  await fetch(API + '/api/tasks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+async function apiDeleteTask(id) {
+  await fetch(API + '/api/tasks/' + id, { method: 'DELETE' });
+}
+
+async function apiLoadGroups() {
+  try {
+    const res = await fetch(API + '/api/groups');
+    groups = await res.json();
+  } catch(e) { groups = []; }
+}
+
+async function apiSaveGroup(group) {
+  await fetch(API + '/api/groups', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(group)
+  });
+}
+
+async function apiDeleteGroup(id) {
+  await fetch(API + '/api/groups/' + id, { method: 'DELETE' });
+}
+
+async function showView(v) {
+  await apiLoad();
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-pill').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-' + v).classList.add('active');
+  const idx = ['tasks','valhalla','graveyard'].indexOf(v);
+  document.querySelectorAll('.nav-pill')[idx].classList.add('active');
+  if (v === 'valhalla') renderValhalla();
+  else if (v === 'graveyard') renderGraveyard();
+  else renderAll();
+}
+
+function goToPage(n) {
+  currentPage = n;
+  document.getElementById('pagesTrack').style.transform = `translateX(-${n * 50}%)`;
+}
+
+// Swipe/drag support
+let touchStartX = 0;
+document.getElementById('pagesWrapper').addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+document.getElementById('pagesWrapper').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) > 60) goToPage(dx < 0 ? 1 : 0);
+}, { passive: true });
+
+let mouseStartX = 0, isDragging = false;
+document.getElementById('pagesWrapper').addEventListener('mousedown', e => { mouseStartX = e.clientX; isDragging = true; });
+document.addEventListener('mouseup', e => {
+  if (!isDragging) return;
+  isDragging = false;
+  const dx = e.clientX - mouseStartX;
+  if (Math.abs(dx) > 80) goToPage(dx < 0 ? 1 : 0);
+});
+
+function renderAll() { renderList('now'); renderList('waiting'); }
+
+function dayKey(ts) {
+  const d = new Date(ts || Date.now());
+  return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+}
+
+function dayLabel(ts) {
+  const d = new Date(ts || Date.now());
+  const today = new Date();
+  const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+  if (dayKey(d) === dayKey(today)) return 'Today';
+  if (dayKey(d) === dayKey(yesterday)) return 'Yesterday';
+  return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function insertDateSeparator(list, label) {
+  const sep = document.createElement('div');
+  sep.className = 'date-separator';
+  sep.innerHTML = `<span class="date-sep-label">${label}</span><div class="date-sep-line"></div>`;
+  list.appendChild(sep);
+}
+
+function renderList(type) {
+  const list = document.getElementById('list-' + type);
+  const empty = document.getElementById('empty-' + type);
+  const arr = tasks[type];
+  list.innerHTML = '';
+
+  if (!arr || arr.length === 0) {
+    empty.style.display = 'flex';
+    return;
+  }
+  empty.style.display = 'none';
+
+  const order = { p1: 0, p2: 1, p3: 2, '': 3 };
+
+  // Find all tasks that are superset children (depend on exactly one task in same list)
+  const childIds = new Set();
+  arr.forEach(t => {
+    if (t.dependsOn && t.dependsOn.length > 0) {
+      t.dependsOn.forEach(pid => {
+        if (arr.find(p => p.id === pid)) childIds.add(t.id);
+      });
+    }
+  });
+
+  // Separate ungrouped top-level, grouped, children
+  const ungrouped = arr.filter(t => !t.groupId && !childIds.has(t.id));
+  const byGroup = {};
+  arr.filter(t => t.groupId && !childIds.has(t.id)).forEach(t => {
+    if (!byGroup[t.groupId]) byGroup[t.groupId] = [];
+    byGroup[t.groupId].push(t);
+  });
+
+  const sorted = [...ungrouped].sort((a, b) => {
+    const da = dayKey(a.createdAt), db = dayKey(b.createdAt);
+    if (da !== db) return (b.createdAt || 0) - (a.createdAt || 0);
+    return order[a.priority||''] - order[b.priority||''];
+  });
+
+  // Helper: get children of a task in this list
+  function getChildren(parentId) {
+    return arr.filter(t => childIds.has(t.id) && t.dependsOn && t.dependsOn.includes(parentId));
+  }
+
+  // Render a task + its superset children recursively
+  function renderTaskWithChildren(task, container) {
+    const card = buildCard(task, type);
+    container.appendChild(card);
+    const children = getChildren(task.id);
+    if (children.length > 0) {
+      const childWrap = document.createElement('div');
+      childWrap.className = 'superset-children';
+      children.forEach(child => {
+        const childContainer = document.createElement('div');
+        childContainer.className = 'superset-child-wrap';
+        renderTaskWithChildren(child, childContainer);
+        childWrap.appendChild(childContainer);
+      });
+      container.appendChild(childWrap);
+    }
+  }
+
+  let lastDay = null;
+  sorted.forEach(task => {
+    const dk = dayKey(task.createdAt);
+    if (dk !== lastDay) { insertDateSeparator(list, dayLabel(task.createdAt)); lastDay = dk; }
+    renderTaskWithChildren(task, list);
+  });
+
+  // Render groups
+  Object.keys(byGroup).forEach(groupId => {
+    const group = groups.find(g => g.id === groupId);
+    if (!group) return;
+    const groupTasks = [...byGroup[groupId]].sort((a, b) => order[a.priority||''] - order[b.priority||'']);
+    list.appendChild(buildGroupContainer(group, groupTasks, type, renderTaskWithChildren));
+  });
+}
+
+function renderValhalla() {
+  const list = document.getElementById('list-valhalla');
+  const empty = document.getElementById('empty-valhalla');
+  const count = document.getElementById('valhalla-count');
+  const arr = tasks.done;
+  list.innerHTML = '';
+  count.textContent = arr.length + ' task' + (arr.length !== 1 ? 's' : '');
+  if (!arr || arr.length === 0) { empty.style.display = 'flex'; return; }
+  empty.style.display = 'none';
+  const sorted = [...arr].sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+  let lastDay = null;
+  sorted.forEach(task => {
+    const dk = dayKey(task.completedAt);
+    if (dk !== lastDay) { insertDateSeparator(list, dayLabel(task.completedAt)); lastDay = dk; }
+    list.appendChild(buildCard(task, 'done'));
+  });
+}
+
+function renderGraveyard() {
+  const list = document.getElementById('list-graveyard');
+  const empty = document.getElementById('empty-graveyard');
+  const count = document.getElementById('graveyard-count');
+  const arr = tasks.deleted;
+  list.innerHTML = '';
+  count.textContent = arr.length + ' task' + (arr.length !== 1 ? 's' : '');
+  if (!arr || arr.length === 0) { empty.style.display = 'flex'; return; }
+  empty.style.display = 'none';
+  const sorted = [...arr].sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+  let lastDay = null;
+  sorted.forEach(task => {
+    const dk = dayKey(task.completedAt);
+    if (dk !== lastDay) { insertDateSeparator(list, dayLabel(task.completedAt)); lastDay = dk; }
+    list.appendChild(buildCard(task, 'deleted'));
+  });
+}
+
+function buildGroupContainer(group, groupTasks, type, renderFn) {
+  const container = document.createElement('div');
+  container.className = 'group-container';
+  container.id = 'group-' + group.id;
+
+  const isCollapsed = collapsedGroups.has(group.id);
+
+  const header = document.createElement('div');
+  header.className = 'group-header';
+  header.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="group-chevron">${isCollapsed ? '▶' : '▼'}</span>
+      <span class="group-name">${group.name}</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="group-count">${groupTasks.length} task${groupTasks.length !== 1 ? 's' : ''}</span>
+      <button class="icon-btn delete" onclick="event.stopPropagation();deleteGroup('${group.id}')" title="Delete group">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M5 3V2h2v1M4 5v4M8 5v4M3 3l.5 7h5L9 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  `;
+  header.addEventListener('click', () => toggleGroupCollapse(group.id, type));
+
+  const body = document.createElement('div');
+  body.className = 'group-body' + (isCollapsed ? ' collapsed' : '');
+  body.id = 'group-body-' + group.id;
+  if (renderFn) groupTasks.forEach(task => renderFn(task, body));
+  else groupTasks.forEach(task => body.appendChild(buildCard(task, type)));
+
+  container.appendChild(header);
+  container.appendChild(body);
+  return container;
+}
+
+function toggleGroupCollapse(groupId, type) {
+  if (collapsedGroups.has(groupId)) collapsedGroups.delete(groupId);
+  else collapsedGroups.add(groupId);
+  const body = document.getElementById('group-body-' + groupId);
+  const container = document.getElementById('group-' + groupId);
+  if (body) body.classList.toggle('collapsed', collapsedGroups.has(groupId));
+  const chevron = container && container.querySelector('.group-chevron');
+  if (chevron) chevron.textContent = collapsedGroups.has(groupId) ? '▶' : '▼';
+}
+
+function buildCard(task, type) {
+  const isDead = type === 'done' || type === 'deleted';
+  const isDeleted = type === 'deleted';
+
+  // Superset state
+  const allDoneIds = new Set([...tasks.done, ...tasks.deleted].map(t => t.id));
+  const allActiveIds = new Set([...tasks.now, ...tasks.waiting].map(t => t.id));
+  const dependsOn = task.dependsOn || [];
+  const isBlocked = !isDead && dependsOn.some(id => allActiveIds.has(id));
+  const isUnblocked = !isDead && dependsOn.length > 0 && dependsOn.every(id => allDoneIds.has(id));
+
+  const card = document.createElement('div');
+  card.className = 'task-card' + (task.priority ? ' ' + task.priority : '') + (isDead ? ' dead' : '') + (isBlocked ? ' blocked' : '') + (isUnblocked ? ' unblocked' : '');
+  card.id = 'card-' + task.id;
+
+  // Single click = edit, double click = complete
+  if (!isDead) {
+    let clickTimer = null;
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('button') || e.target.closest('.checkbox')) return;
+      if (clickTimer) {
+        clearTimeout(clickTimer);
+        clickTimer = null;
+        completeTask(task.id, type);
+      } else {
+        clickTimer = setTimeout(() => {
+          clickTimer = null;
+          openEditModal(task.id, type);
+        }, 220);
+      }
+    });
+  }
+
+  const expired = task.timerAt && Date.now() >= task.timerAt;
+  if (expired && type === 'waiting') card.classList.add('timer-expired');
+
+  if (task.priority) {
+    const bar = document.createElement('div');
+    bar.className = 'priority-bar';
+    card.appendChild(bar);
+  }
+
+  const checkWrap = document.createElement('div');
+  checkWrap.className = 'check-wrap';
+  const checkbox = document.createElement('div');
+  checkbox.className = 'checkbox' + (isDead ? ' checked' + (isDeleted ? ' deleted-check' : '') : '');
+  checkbox.innerHTML = isDeleted
+    ? `<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M5 3V2h2v1M4 5v4M8 5v4M3 3l.5 7h5L9 3" stroke="#0e0e0f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+    : `<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="#0e0e0f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  if (!isDead) checkbox.onclick = () => completeTask(task.id, type);
+  checkWrap.appendChild(checkbox);
+  card.appendChild(checkWrap);
+
+  const body = document.createElement('div');
+  body.className = 'task-body';
+
+  const title = document.createElement('div');
+  title.className = 'task-title' + (isDead ? ' struck' : '');
+  title.textContent = task.title;
+  body.appendChild(title);
+
+  if (task.notes) {
+    const notes = document.createElement('div');
+    notes.className = 'task-notes';
+    notes.textContent = task.notes;
+    body.appendChild(notes);
+  }
+
+  if (isDead && task.completedAt) {
+    const ca = document.createElement('div');
+    ca.className = 'completed-at';
+    ca.textContent = (isDeleted ? 'Deleted ' : 'Completed ') + new Date(task.completedAt).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    body.appendChild(ca);
+  }
+
+  const meta = document.createElement('div');
+  meta.className = 'task-meta';
+
+  if (task.priority) {
+    const pb = document.createElement('span');
+    pb.className = 'priority-badge badge-' + task.priority;
+    pb.textContent = task.priority === 'p1' ? 'High' : task.priority === 'p2' ? 'Medium' : 'Low';
+    meta.appendChild(pb);
+  }
+
+  if (task.timerAt) {
+    const tb = document.createElement('span');
+    tb.className = 'timer-badge' + (expired ? ' expired' : '');
+    tb.dataset.taskId = task.id;
+    tb.textContent = '⏱ ' + (expired ? 'Expired' : formatTimer(task.timerAt));
+    meta.appendChild(tb);
+  }
+
+  if (task.transferredAt) {
+    const xb = document.createElement('span');
+    xb.className = 'transferred-badge';
+    xb.textContent = '⇢ moved from active';
+    meta.appendChild(xb);
+  }
+
+  if (isBlocked) {
+    const bb = document.createElement('span');
+    bb.className = 'blocked-badge';
+    const names = dependsOn.map(id => {
+      const t = [...tasks.now, ...tasks.waiting].find(t => t.id === id);
+      return t ? t.title : null;
+    }).filter(Boolean);
+    bb.textContent = '🔒 blocked by: ' + (names.length ? names.join(', ') : 'another task');
+    meta.appendChild(bb);
+  }
+
+  if (isUnblocked) {
+    const ub = document.createElement('span');
+    ub.className = 'unblocked-badge';
+    ub.textContent = '🔓 ready to start';
+    meta.appendChild(ub);
+  }
+
+  body.appendChild(meta);
+  card.appendChild(body);
+
+  const actions = document.createElement('div');
+  actions.className = 'task-actions';
+
+  if (!isDead) {
+    // Row 1: Move | Edit
+    const moveBtn = document.createElement('button');
+    moveBtn.className = 'icon-btn move';
+    if (type === 'now') {
+      moveBtn.title = 'Move to Waiting';
+      moveBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      moveBtn.onclick = () => moveToWaiting(task.id);
+    } else {
+      moveBtn.title = 'Move back to Active';
+      moveBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10 6H2M6 2L2 6l4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      moveBtn.onclick = () => moveToActive(task.id);
+    }
+    actions.appendChild(moveBtn);
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'icon-btn';
+    editBtn.title = 'Edit';
+    editBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8.5 1.5l2 2-6 6H2.5v-2l6-6z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    editBtn.onclick = () => openEditModal(task.id, type);
+    actions.appendChild(editBtn);
+
+    // Row 2: Superset | Delete
+    const superBtn = document.createElement('button');
+    superBtn.className = 'icon-btn superset';
+    superBtn.title = 'Add as superset of another task';
+    superBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2"/></svg>`;
+    superBtn.onclick = () => openSupersetModal(task.id, type);
+    actions.appendChild(superBtn);
+  }
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'icon-btn delete';
+  delBtn.title = 'Remove';
+  delBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M5 3V2h2v1M4 5v4M8 5v4M3 3l.5 7h5L9 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  delBtn.onclick = () => deleteTask(task.id, type);
+  actions.appendChild(delBtn);
+
+  card.appendChild(actions);
+  return card;
+}
+
+function formatTimer(ts) {
+  const diff = ts - Date.now();
+  if (diff <= 0) return 'Expired';
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  if (h > 0) return `in ${h}h ${m}m`;
+  return `in ${m}m`;
+}
+
+function completeTask(id, type) {
+  const card = document.getElementById('card-' + id);
+  if (!card) return;
+
+  // Step 1: fill the checkbox
+  const checkbox = card.querySelector('.checkbox');
+  if (checkbox) {
+    checkbox.classList.add('checked', 'filling');
+    checkbox.innerHTML = `<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="#0e0e0f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+
+  // Step 2: fly up after checkmark fills
+  setTimeout(() => {
+    card.classList.add('completing-anim');
+    setTimeout(async () => {
+      const idx = tasks[type].findIndex(t => t.id === id);
+      if (idx === -1) return;
+      const task = tasks[type].splice(idx, 1)[0];
+      task.completedAt = Date.now();
+      task.type = 'done';
+      tasks.done.push(task);
+      await apiSaveTask(task);
+      renderList(type);
+      renderList('now');
+      renderList('waiting');
+    }, 450);
+  }, 250);
+}
+
+async function deleteTask(id, type) {
+  if (type === 'done') {
+    tasks.done = tasks.done.filter(t => t.id !== id);
+    await apiDeleteTask(id);
+    renderValhalla();
+    return;
+  }
+  if (type === 'deleted') {
+    tasks.deleted = tasks.deleted.filter(t => t.id !== id);
+    await apiDeleteTask(id);
+    renderGraveyard();
+    return;
+  }
+  // Move to graveyard as deleted
+  const card = document.getElementById('card-' + id);
+  if (card) card.classList.add('completing');
+  setTimeout(async () => {
+    const idx = tasks[type].findIndex(t => t.id === id);
+    if (idx === -1) return;
+    const task = tasks[type].splice(idx, 1)[0];
+    task.completedAt = Date.now();
+    task.type = 'deleted';
+    tasks.deleted.push(task);
+    await apiSaveTask(task);
+    renderList(type);
+  }, 350);
+}
+
+async function clearAllValhalla() {
+  if (tasks.done.length === 0) return;
+  if (!confirm('Clear all completed tasks? This cannot be undone.')) return;
+  for (const task of tasks.done) await apiDeleteTask(task.id);
+  tasks.done = [];
+  renderValhalla();
+}
+
+async function clearAllGraveyard() {
+  if (tasks.deleted.length === 0) return;
+  if (!confirm('Clear all deleted tasks? This cannot be undone.')) return;
+  for (const task of tasks.deleted) await apiDeleteTask(task.id);
+  tasks.deleted = [];
+  renderGraveyard();
+}
+
+function populateGroupSelect(selectedId, type) {
+  const sel = document.getElementById('inputGroup');
+  sel.innerHTML = '<option value="">— No group —</option>';
+  groups.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g.id;
+    opt.textContent = g.name;
+    if (g.id === selectedId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function populateDependsOn(selectedIds, excludeId, type) {
+  const list = document.getElementById('dependsOnList');
+  list.innerHTML = '';
+  const allTasks = [...tasks.now, ...tasks.waiting].filter(t => t.id !== excludeId);
+  if (allTasks.length === 0) {
+    list.innerHTML = '<div style="font-size:0.72rem;color:var(--text-dim);">No other tasks available.</div>';
+    return;
+  }
+  allTasks.forEach(t => {
+    const item = document.createElement('label');
+    item.className = 'depends-item';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = t.id;
+    cb.checked = selectedIds.includes(t.id);
+    item.appendChild(cb);
+    item.appendChild(document.createTextNode(t.title));
+    list.appendChild(item);
+  });
+}
+
+function openAddModal(type) {
+  editingId = null;
+  modalType = type;
+  document.getElementById('modalTitle').textContent = type === 'now' ? 'New Task' : 'New Waiting Task';
+  document.getElementById('inputTitle').value = '';
+  document.getElementById('inputNotes').value = '';
+  setPriority('p3');
+  populateGroupSelect('', type);
+  document.getElementById('timerToggleGroup').style.display = type === 'waiting' ? 'block' : 'none';
+  timerEnabled = false;
+  document.getElementById('timerToggle').classList.remove('on');
+  document.getElementById('timerSection').classList.remove('visible');
+  setTimerType('duration');
+  document.getElementById('inputHours').value = 1;
+  document.getElementById('inputMins').value = 0;
+  document.getElementById('inputTime').value = '';
+  isSaving = false;
+  parentMode = false;
+  document.getElementById('parentCheckboxGroup').style.display = 'none';
+  document.getElementById('parentToggle').classList.remove('on');
+  document.getElementById('saveBtn').textContent = 'Save task';
+  document.getElementById('taskOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('inputTitle').focus(), 100);
+}
+
+function openEditModal(id, type) {
+  const task = tasks[type].find(t => t.id === id);
+  if (!task) return;
+  editingId = id;
+  modalType = type;
+  document.getElementById('modalTitle').textContent = 'Edit Task';
+  document.getElementById('inputTitle').value = task.title;
+  document.getElementById('inputNotes').value = task.notes || '';
+  setPriority(task.priority || 'p3');
+  populateGroupSelect(task.groupId || '', type);
+  document.getElementById('timerToggleGroup').style.display = type === 'waiting' ? 'block' : 'none';
+
+  timerEnabled = !!task.timerAt;
+  document.getElementById('timerToggle').classList.toggle('on', timerEnabled);
+  document.getElementById('timerSection').classList.toggle('visible', timerEnabled);
+
+  if (task.timerAt) {
+    const diff = task.timerAt - Date.now();
+    setTimerType('duration');
+    if (diff > 0) {
+      document.getElementById('inputHours').value = Math.floor(diff / 3600000);
+      document.getElementById('inputMins').value = Math.floor((diff % 3600000) / 60000);
+    } else {
+      document.getElementById('inputHours').value = 0;
+      document.getElementById('inputMins').value = 0;
+    }
+  } else {
+    setTimerType('duration');
+    document.getElementById('inputHours').value = 1;
+    document.getElementById('inputMins').value = 0;
+  }
+
+  isSaving = false;
+  document.getElementById('saveBtn').textContent = 'Update task';
+  document.getElementById('taskOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('inputTitle').focus(), 100);
+}
+
+function setPriority(val) {
+  document.getElementById('inputPriority').value = val;
+  document.querySelectorAll('.priority-box').forEach(b => {
+    b.classList.toggle('active', b.dataset.val === val);
+  });
+}
+
+async function moveToWaiting(id) {
+  const idx = tasks.now.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  const card = document.getElementById('card-' + id);
+  if (card) card.classList.add('completing');
+
+  // Find children that depend on this task
+  const children = tasks.now.filter(t => t.dependsOn && t.dependsOn.includes(id));
+
+  setTimeout(async () => {
+    const task = tasks.now.splice(idx, 1)[0];
+    task.type = 'waiting';
+    task.transferredAt = Date.now();
+    task.createdAt = Date.now();
+    tasks.waiting.push(task);
+    apiSaveTask(task);
+
+    // Move children too
+    for (const child of children) {
+      const ci = tasks.now.findIndex(t => t.id === child.id);
+      if (ci !== -1) {
+        const ct = tasks.now.splice(ci, 1)[0];
+        ct.type = 'waiting';
+        ct.transferredAt = Date.now();
+        ct.createdAt = Date.now();
+        tasks.waiting.push(ct);
+        apiSaveTask(ct);
+      }
+    }
+
+    renderList('now');
+    renderList('waiting');
+  }, 350);
+}
+
+async function moveToActive(id) {
+  const idx = tasks.waiting.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  const card = document.getElementById('card-' + id);
+  if (card) card.classList.add('completing');
+
+  // Find children that depend on this task
+  const children = tasks.waiting.filter(t => t.dependsOn && t.dependsOn.includes(id));
+
+  setTimeout(async () => {
+    const task = tasks.waiting.splice(idx, 1)[0];
+    task.type = 'now';
+    task.transferredAt = null;
+    task.timerAt = null;
+    task.createdAt = Date.now();
+    tasks.now.push(task);
+    apiSaveTask(task);
+
+    // Move children too
+    for (const child of children) {
+      const ci = tasks.waiting.findIndex(t => t.id === child.id);
+      if (ci !== -1) {
+        const ct = tasks.waiting.splice(ci, 1)[0];
+        ct.type = 'now';
+        ct.transferredAt = null;
+        ct.timerAt = null;
+        ct.createdAt = Date.now();
+        tasks.now.push(ct);
+        apiSaveTask(ct);
+      }
+    }
+
+    renderList('waiting');
+    renderList('now');
+  }, 350);
+}
+
+function closeModal() {
+  document.getElementById('taskOverlay').classList.remove('open');
+  supersetParentId = null;
+  supersetParentType = null;
+}
+
+function overlayClickClose(e) {
+  if (e.target === document.getElementById('taskOverlay')) closeModal();
+}
+
+function toggleTimer() {
+  timerEnabled = !timerEnabled;
+  document.getElementById('timerToggle').classList.toggle('on', timerEnabled);
+  document.getElementById('timerSection').classList.toggle('visible', timerEnabled);
+}
+
+function setTimerType(t) {
+  timerType = t;
+  document.getElementById('btnDuration').classList.toggle('active', t === 'duration');
+  document.getElementById('btnTime').classList.toggle('active', t === 'time');
+  document.getElementById('durationInput').style.display = t === 'duration' ? 'block' : 'none';
+  document.getElementById('timeInput').style.display = t === 'time' ? 'block' : 'none';
+}
+
+let isSaving = false;
+
+async function saveTask() {
+  if (isSaving) return;
+  isSaving = true;
+  const saveBtn = document.getElementById('saveBtn');
+  if (saveBtn) saveBtn.disabled = true;
+
+  const title = document.getElementById('inputTitle').value.trim();
+  if (!title) {
+    document.getElementById('inputTitle').style.borderColor = 'var(--danger)';
+    document.getElementById('inputTitle').focus();
+    setTimeout(() => document.getElementById('inputTitle').style.borderColor = '', 1200);
+    isSaving = false;
+    const saveBtn = document.getElementById('saveBtn');
+    if (saveBtn) saveBtn.disabled = false;
+    return;
+  }
+
+  let timerAt = null;
+  if (modalType === 'waiting' && timerEnabled) {
+    if (timerType === 'duration') {
+      const h = parseInt(document.getElementById('inputHours').value) || 0;
+      const m = parseInt(document.getElementById('inputMins').value) || 0;
+      if (h > 0 || m > 0) timerAt = Date.now() + (h * 3600000) + (m * 60000);
+    } else {
+      const tval = document.getElementById('inputTime').value;
+      if (tval) {
+        const [hh, mm] = tval.split(':').map(Number);
+        const d = new Date();
+        d.setHours(hh, mm, 0, 0);
+        if (d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
+        timerAt = d.getTime();
+      }
+    }
+  }
+
+  // If creating a subtask, inherit parent's group and set dependsOn
+  const parentTask = supersetParentId ? [...tasks.now, ...tasks.waiting].find(t => t.id === supersetParentId) : null;
+
+  let dependsOn = [];
+  if (editingId) {
+    dependsOn = tasks[modalType].find(t => t.id === editingId)?.dependsOn || [];
+  } else if (parentTask && !parentMode) {
+    // Normal mode: new task depends on parent
+    dependsOn = [supersetParentId];
+  }
+  // parentMode: new task IS the parent, handled after save below
+
+  const groupId = document.getElementById('inputGroup').value || (parentTask ? parentTask.groupId : null) || null;
+
+  const task = {
+    id: editingId || ('t' + Date.now() + Math.random().toString(36).slice(2,6)),
+    type: modalType,
+    title,
+    notes: document.getElementById('inputNotes').value.trim(),
+    priority: document.getElementById('inputPriority').value,
+    timerAt,
+    createdAt: Date.now(),
+    completedAt: null,
+    groupId,
+    dependsOn
+  };
+
+  if (editingId) {
+    const idx = tasks[modalType].findIndex(t => t.id === editingId);
+    if (idx !== -1) {
+      task.createdAt = tasks[modalType][idx].createdAt;
+      tasks[modalType][idx] = task;
+    }
+  } else {
+    tasks[modalType].push(task);
+  }
+
+  // Capture before closeModal clears them
+  const wasParentMode = parentMode && !!supersetParentId;
+  const capturedParentId = supersetParentId;
+
+  // Close instantly, save in background
+  renderList(modalType);
+  closeModal();
+  isSaving = false;
+  const saveBtn2 = document.getElementById('saveBtn');
+  if (saveBtn2) saveBtn2.disabled = false;
+  apiSaveTask(task).catch(() => showToast('⚠ Failed to save task. Check connection.'));
+
+  // If parent mode, update the original task to depend on this new task
+  if (wasParentMode && capturedParentId) {
+    const originalTask = [...tasks.now, ...tasks.waiting].find(t => t.id === capturedParentId);
+    if (originalTask) {
+      if (!originalTask.dependsOn) originalTask.dependsOn = [];
+      if (!originalTask.dependsOn.includes(task.id)) originalTask.dependsOn.push(task.id);
+      apiSaveTask(originalTask).catch(() => {});
+      renderList('now');
+      renderList('waiting');
+    }
+  }
+}
+
+document.getElementById('inputTitle').addEventListener('keydown', e => {
+  if (e.key === 'Enter') saveTask();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('taskOverlay').classList.contains('open')) closeModal();
+    if (document.getElementById('groupOverlay').classList.contains('open')) closeGroupModal();
+  }
+  if (e.key === 'Enter') {
+    if (document.getElementById('groupOverlay').classList.contains('open')) saveGroup();
+  }
+});
+
+// Timer checks
+function checkTimers() {
+  tasks.waiting.forEach(task => {
+    if (task.timerAt && Date.now() >= task.timerAt && !task._notified) {
+      task._notified = true;
+      showToast('⏱ Timer expired: "' + task.title + '"');
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        try { new Notification('Taskflow — Timer expired', { body: task.title }); } catch(e) {}
+      }
+      const card = document.getElementById('card-' + task.id);
+      if (card) {
+        card.classList.add('timer-expired');
+        const tb = card.querySelector('.timer-badge');
+        if (tb) { tb.classList.add('expired'); tb.textContent = '⏱ Expired'; }
+      }
+    }
+  });
+
+  // Live countdown update
+  document.querySelectorAll('.timer-badge:not(.expired)').forEach(tb => {
+    const id = tb.dataset.taskId;
+    if (!id) return;
+    const task = tasks.waiting.find(t => t.id === id);
+    if (task && task.timerAt) tb.textContent = '⏱ ' + formatTimer(task.timerAt);
+  });
+}
+
+function showToast(msg) {
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(() => {
+    t.style.transition = 'opacity 0.4s';
+    t.style.opacity = '0';
+    setTimeout(() => t.remove(), 400);
+  }, 5000);
+}
+
+// Superset functions
+let supersetParentId = null;
+let supersetParentType = null;
+
+function openSupersetModal(parentId, parentType) {
+  supersetParentId = parentId;
+  supersetParentType = parentType;
+  openAddModal(parentType);
+  document.getElementById('modalTitle').textContent = 'New Subtask';
+  document.getElementById('parentCheckboxGroup').style.display = 'block';
+  document.getElementById('parentToggle').classList.remove('on');
+}
+
+let parentMode = false;
+
+function toggleParentMode() {
+  parentMode = !parentMode;
+  document.getElementById('parentToggle').classList.toggle('on', parentMode);
+}
+
+// Group functions
+let createGroupType = 'now';
+
+function openCreateGroupModal(type) {
+  createGroupType = type;
+  document.getElementById('inputGroupName').value = '';
+  document.getElementById('groupOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('inputGroupName').focus(), 100);
+}
+
+function closeGroupModal() {
+  document.getElementById('groupOverlay').classList.remove('open');
+}
+
+async function saveGroup() {
+  const name = document.getElementById('inputGroupName').value.trim();
+  if (!name) {
+    document.getElementById('inputGroupName').style.borderColor = 'var(--danger)';
+    setTimeout(() => document.getElementById('inputGroupName').style.borderColor = '', 1200);
+    return;
+  }
+  const group = { id: 'g' + Date.now(), name };
+  groups.push(group);
+  await apiSaveGroup(group);
+  closeGroupModal();
+  showToast('Group "' + name + '" created!');
+}
+
+async function deleteGroup(id) {
+  const group = groups.find(g => g.id === id);
+  if (!group) return;
+  // Unassign tasks from this group
+  [...tasks.now, ...tasks.waiting].forEach(t => {
+    if (t.groupId === id) t.groupId = null;
+  });
+  groups = groups.filter(g => g.id !== id);
+  await apiDeleteGroup(id);
+  renderAll();
+}
+
+document.getElementById('inputGroupName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') saveGroup();
+});
+
+// Init
+async function init() {
+  await apiLoad();
+  renderAll();
+  if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+    Notification.requestPermission().catch(() => {});
+  }
+  setInterval(checkTimers, 10000);
+  checkTimers();
+}
+
+init();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
+
