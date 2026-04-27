@@ -857,11 +857,142 @@
   .depends-item input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
   .depends-item:hover { color: var(--text); }
 
+  /* CALENDAR VIEW */
+  .calendar-view {
+    padding: 28px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .calendar-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .calendar-month-label {
+    font-family: 'Instrument Serif', serif;
+    font-size: 2rem;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .calendar-nav-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: all 0.18s;
+  }
+
+  .calendar-nav-btn:hover { background: var(--surface2); border-color: #444; }
+
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+  }
+
+  .calendar-day-header {
+    text-align: center;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 6px 0 10px;
+  }
+
+  .calendar-day {
+    min-height: 88px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 7px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+
+  .calendar-day.other-month { opacity: 0.25; background: var(--bg); }
+
+  .calendar-day.today {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .calendar-day-num {
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    letter-spacing: 0.04em;
+  }
+
+  .calendar-day.today .calendar-day-num { color: var(--accent); font-weight: 700; }
+
+  .calendar-task-chip {
+    font-size: 0.6rem;
+    padding: 2px 5px;
+    border-radius: 4px;
+    margin-bottom: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-muted);
+    transition: all 0.15s;
+    display: block;
+    letter-spacing: 0.02em;
+    line-height: 1.5;
+  }
+
+  .calendar-task-chip:hover { color: var(--text); border-color: #555; }
+  .calendar-task-chip.now-chip { border-color: #2f4a0a; color: var(--p3); background: var(--accent-dim); }
+  .calendar-task-chip.waiting-chip { border-color: #4a2f10; color: var(--waiting); background: var(--waiting-dim); }
+  .calendar-task-chip.p1-chip { border-color: #4a1515; color: var(--p1); background: #2a0f0f; }
+  .calendar-task-chip.p2-chip { border-color: #4a2f0a; color: var(--p2); background: #2a1a05; }
+
+  .calendar-more {
+    font-size: 0.58rem;
+    color: var(--text-dim);
+    letter-spacing: 0.06em;
+    margin-top: 2px;
+  }
+
+  input[type="datetime-local"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.18s;
+    -webkit-appearance: none;
+    color-scheme: dark;
+  }
+
+  input[type="datetime-local"]:focus { border-color: #555; }
+
   @media (max-width: 600px) {
     .topbar { padding: 14px 16px; }
     .page { padding: 18px; }
     .graveyard-view { padding: 18px; }
+    .calendar-view { padding: 18px; }
     .page-title { font-size: 1.6rem; }
+    .calendar-day { min-height: 60px; padding: 5px 4px; }
+    .calendar-task-chip { font-size: 0.55rem; }
   }
 </style>
 </head>
@@ -871,6 +1002,7 @@
   <div class="logo">task<span>flow</span></div>
   <div class="nav-pills">
     <button class="nav-pill active" onclick="showView('tasks')">Tasks</button>
+    <button class="nav-pill" onclick="showView('calendar')">Calendar</button>
     <button class="nav-pill" onclick="showView('valhalla')">Valhalla</button>
     <button class="nav-pill" onclick="showView('graveyard')">Graveyard</button>
   </div>
@@ -967,6 +1099,24 @@
   </div>
 </div>
 
+<!-- CALENDAR VIEW -->
+<div class="view" id="view-calendar">
+  <div class="calendar-view">
+    <div class="calendar-nav">
+      <div>
+        <div class="page-label">All tasks</div>
+        <div class="calendar-month-label" id="calMonthLabel"></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="calendar-nav-btn" onclick="calNav(-1)">← Prev</button>
+        <button class="calendar-nav-btn" onclick="calNav(0)">Today</button>
+        <button class="calendar-nav-btn" onclick="calNav(1)">Next →</button>
+      </div>
+    </div>
+    <div class="calendar-grid" id="calGrid"></div>
+  </div>
+</div>
+
 <!-- ADD/EDIT MODAL -->
 <div class="overlay" id="taskOverlay" onclick="overlayClickClose(event)">
   <div class="modal">
@@ -1019,6 +1169,7 @@
       <div class="timer-type-btns">
         <button class="timer-type-btn active" id="btnDuration" onclick="setTimerType('duration')">In X hours</button>
         <button class="timer-type-btn" id="btnTime" onclick="setTimerType('time')">At a time</button>
+        <button class="timer-type-btn" id="btnDatetime" onclick="setTimerType('datetime')">On a date</button>
       </div>
       <div id="durationInput">
         <div class="hours-row">
@@ -1030,6 +1181,9 @@
       </div>
       <div id="timeInput" style="display:none;">
         <input type="time" id="inputTime">
+      </div>
+      <div id="datetimeInput" style="display:none;">
+        <input type="datetime-local" id="inputDatetime">
       </div>
     </div>
 
@@ -1133,10 +1287,11 @@ async function showView(v) {
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-pill').forEach(el => el.classList.remove('active'));
   document.getElementById('view-' + v).classList.add('active');
-  const idx = ['tasks','valhalla','graveyard'].indexOf(v);
+  const idx = ['tasks','calendar','valhalla','graveyard'].indexOf(v);
   document.querySelectorAll('.nav-pill')[idx].classList.add('active');
   if (v === 'valhalla') renderValhalla();
   else if (v === 'graveyard') renderGraveyard();
+  else if (v === 'calendar') renderCalendar();
   else renderAll();
 }
 
@@ -1246,19 +1401,20 @@ function renderList(type) {
     }
   }
 
+  // Render groups (pinned to top, sorted alphabetically)
+  const sortedGroups = groups
+    .filter(g => byGroup[g.id])
+    .sort((a, b) => a.name.localeCompare(b.name));
+  sortedGroups.forEach(group => {
+    const groupTasks = [...byGroup[group.id]].sort((a, b) => order[a.priority||''] - order[b.priority||'']);
+    list.appendChild(buildGroupContainer(group, groupTasks, type, renderTaskWithChildren));
+  });
+
   let lastDay = null;
   sorted.forEach(task => {
     const dk = dayKey(task.createdAt);
     if (dk !== lastDay) { insertDateSeparator(list, dayLabel(task.createdAt)); lastDay = dk; }
     renderTaskWithChildren(task, list);
-  });
-
-  // Render groups
-  Object.keys(byGroup).forEach(groupId => {
-    const group = groups.find(g => g.id === groupId);
-    if (!group) return;
-    const groupTasks = [...byGroup[groupId]].sort((a, b) => order[a.priority||''] - order[b.priority||'']);
-    list.appendChild(buildGroupContainer(group, groupTasks, type, renderTaskWithChildren));
   });
 }
 
@@ -1511,8 +1667,10 @@ function buildCard(task, type) {
 function formatTimer(ts) {
   const diff = ts - Date.now();
   if (diff <= 0) return 'Expired';
-  const h = Math.floor(diff / 3600000);
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
   const m = Math.floor((diff % 3600000) / 60000);
+  if (d > 0) return `in ${d}d ${h}h`;
   if (h > 0) return `in ${h}h ${m}m`;
   return `in ${m}m`;
 }
@@ -1639,6 +1797,7 @@ function openAddModal(type) {
   document.getElementById('inputHours').value = 1;
   document.getElementById('inputMins').value = 0;
   document.getElementById('inputTime').value = '';
+  document.getElementById('inputDatetime').value = '';
   isSaving = false;
   parentMode = false;
   document.getElementById('parentCheckboxGroup').style.display = 'none';
@@ -1666,11 +1825,19 @@ function openEditModal(id, type) {
 
   if (task.timerAt) {
     const diff = task.timerAt - Date.now();
-    setTimerType('duration');
-    if (diff > 0) {
+    if (diff > 86400000) {
+      // Far-future timer — restore as datetime picker
+      setTimerType('datetime');
+      const dt = new Date(task.timerAt);
+      const pad = n => String(n).padStart(2, '0');
+      document.getElementById('inputDatetime').value =
+        dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate()) + 'T' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+    } else if (diff > 0) {
+      setTimerType('duration');
       document.getElementById('inputHours').value = Math.floor(diff / 3600000);
       document.getElementById('inputMins').value = Math.floor((diff % 3600000) / 60000);
     } else {
+      setTimerType('duration');
       document.getElementById('inputHours').value = 0;
       document.getElementById('inputMins').value = 0;
     }
@@ -1785,8 +1952,10 @@ function setTimerType(t) {
   timerType = t;
   document.getElementById('btnDuration').classList.toggle('active', t === 'duration');
   document.getElementById('btnTime').classList.toggle('active', t === 'time');
+  document.getElementById('btnDatetime').classList.toggle('active', t === 'datetime');
   document.getElementById('durationInput').style.display = t === 'duration' ? 'block' : 'none';
   document.getElementById('timeInput').style.display = t === 'time' ? 'block' : 'none';
+  document.getElementById('datetimeInput').style.display = t === 'datetime' ? 'block' : 'none';
 }
 
 let isSaving = false;
@@ -1814,7 +1983,7 @@ async function saveTask() {
       const h = parseInt(document.getElementById('inputHours').value) || 0;
       const m = parseInt(document.getElementById('inputMins').value) || 0;
       if (h > 0 || m > 0) timerAt = Date.now() + (h * 3600000) + (m * 60000);
-    } else {
+    } else if (timerType === 'time') {
       const tval = document.getElementById('inputTime').value;
       if (tval) {
         const [hh, mm] = tval.split(':').map(Number);
@@ -1823,6 +1992,9 @@ async function saveTask() {
         if (d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
         timerAt = d.getTime();
       }
+    } else if (timerType === 'datetime') {
+      const dtval = document.getElementById('inputDatetime').value;
+      if (dtval) timerAt = new Date(dtval).getTime();
     }
   }
 
@@ -2005,6 +2177,111 @@ async function deleteGroup(id) {
 document.getElementById('inputGroupName').addEventListener('keydown', e => {
   if (e.key === 'Enter') saveGroup();
 });
+
+// Calendar
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+
+function calNav(dir) {
+  if (dir === 0) {
+    calYear = new Date().getFullYear();
+    calMonth = new Date().getMonth();
+  } else {
+    calMonth += dir;
+    if (calMonth < 0) { calMonth = 11; calYear--; }
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+  }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('calMonthLabel').textContent = monthNames[calMonth] + ' ' + calYear;
+
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+
+  // Day headers — Monday first
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d => {
+    const h = document.createElement('div');
+    h.className = 'calendar-day-header';
+    h.textContent = d;
+    grid.appendChild(h);
+  });
+
+  // Build task map: dateKey -> tasks[]
+  // Display date: timerAt if set, else createdAt
+  const taskMap = {};
+  [...tasks.now, ...tasks.waiting].forEach(task => {
+    const displayTs = task.timerAt || task.createdAt || Date.now();
+    const d = new Date(displayTs);
+    const key = d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+    if (!taskMap[key]) taskMap[key] = [];
+    taskMap[key].push(task);
+  });
+
+  // Grid math
+  const firstDay = new Date(calYear, calMonth, 1);
+  let startDow = firstDay.getDay(); // 0=Sun
+  startDow = (startDow + 6) % 7;   // Mon=0, Sun=6
+  const totalDays = new Date(calYear, calMonth + 1, 0).getDate();
+  const prevMonthLastDay = new Date(calYear, calMonth, 0).getDate();
+  const totalCells = Math.ceil((startDow + totalDays) / 7) * 7;
+
+  const today = new Date();
+  const todayKey = today.getFullYear() + '-' + today.getMonth() + '-' + today.getDate();
+
+  for (let i = 0; i < totalCells; i++) {
+    let cellDate, isCurrentMonth;
+    if (i < startDow) {
+      cellDate = new Date(calYear, calMonth - 1, prevMonthLastDay - startDow + i + 1);
+      isCurrentMonth = false;
+    } else if (i >= startDow + totalDays) {
+      cellDate = new Date(calYear, calMonth + 1, i - startDow - totalDays + 1);
+      isCurrentMonth = false;
+    } else {
+      cellDate = new Date(calYear, calMonth, i - startDow + 1);
+      isCurrentMonth = true;
+    }
+
+    const cellKey = cellDate.getFullYear() + '-' + cellDate.getMonth() + '-' + cellDate.getDate();
+    const isToday = cellKey === todayKey;
+
+    const cell = document.createElement('div');
+    cell.className = 'calendar-day' + (!isCurrentMonth ? ' other-month' : '') + (isToday ? ' today' : '');
+
+    const numDiv = document.createElement('div');
+    numDiv.className = 'calendar-day-num';
+    numDiv.textContent = cellDate.getDate();
+    cell.appendChild(numDiv);
+
+    const cellTasks = taskMap[cellKey] || [];
+    const maxShow = 3;
+    cellTasks.slice(0, maxShow).forEach(task => {
+      const chip = document.createElement('div');
+      const isWaiting = !!tasks.waiting.find(t => t.id === task.id);
+      let chipClass;
+      if (task.priority === 'p1') chipClass = 'p1-chip';
+      else if (task.priority === 'p2') chipClass = 'p2-chip';
+      else if (isWaiting) chipClass = 'waiting-chip';
+      else chipClass = 'now-chip';
+      chip.className = 'calendar-task-chip ' + chipClass;
+      chip.textContent = task.title;
+      chip.title = task.title + (task.timerAt ? '\n⏱ ' + new Date(task.timerAt).toLocaleString('en-GB', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '');
+      chip.onclick = () => openEditModal(task.id, isWaiting ? 'waiting' : 'now');
+      cell.appendChild(chip);
+    });
+
+    if (cellTasks.length > maxShow) {
+      const more = document.createElement('div');
+      more.className = 'calendar-more';
+      more.textContent = '+' + (cellTasks.length - maxShow) + ' more';
+      cell.appendChild(more);
+    }
+
+    grid.appendChild(cell);
+  }
+}
 
 // Init
 async function init() {
