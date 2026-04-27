@@ -103,7 +103,7 @@
   .pages-wrapper {
     overflow: hidden;
     position: relative;
-    height: calc(100vh - 65px);
+    height: 100%;
   }
 
   .pages-track {
@@ -858,6 +858,43 @@
   .depends-item input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
   .depends-item:hover { color: var(--text); }
 
+  /* APP LAYOUT */
+  .app-layout {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 65px);
+  }
+
+  .app-content {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .app-content .view.active {
+    height: 100%;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .calendar-panel {
+    flex-shrink: 0;
+    max-height: 0;
+    overflow: hidden;
+    border-bottom: 1px solid transparent;
+    transition: max-height 0.38s cubic-bezier(0.4,0,0.2,1), border-color 0.38s;
+  }
+
+  .calendar-panel.open {
+    max-height: 460px;
+    border-bottom-color: var(--border);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
   /* CALENDAR TOGGLE BUTTON */
   .cal-toggle-btn {
     width: 36px;
@@ -884,7 +921,7 @@
 
   /* CALENDAR VIEW */
   .calendar-view {
-    padding: 28px;
+    padding: 14px 24px 10px;
     max-width: 1100px;
     margin: 0 auto;
   }
@@ -893,14 +930,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 24px;
-    padding-bottom: 16px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
     border-bottom: 1px solid var(--border);
   }
 
   .calendar-month-label {
     font-family: 'Instrument Serif', serif;
-    font-size: 2rem;
+    font-size: 1.5rem;
     letter-spacing: -0.02em;
     color: var(--text);
     line-height: 1;
@@ -937,10 +974,10 @@
   }
 
   .calendar-day {
-    min-height: 88px;
+    min-height: 70px;
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 8px 7px;
+    padding: 6px 5px;
     background: var(--surface);
     overflow: hidden;
   }
@@ -1044,6 +1081,24 @@
   </div>
 </div>
 
+<div class="app-layout">
+
+<div class="calendar-panel" id="calendarPanel">
+  <div class="calendar-view">
+    <div class="calendar-nav">
+      <div class="calendar-month-label" id="calMonthLabel"></div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="calendar-nav-btn" onclick="calNav(-1)">← Prev</button>
+        <button class="calendar-nav-btn" onclick="calNav(0)">Today</button>
+        <button class="calendar-nav-btn" onclick="calNav(1)">Next →</button>
+      </div>
+    </div>
+    <div class="calendar-grid" id="calGrid"></div>
+  </div>
+</div>
+
+<div class="app-content">
+
 <!-- TASKS VIEW -->
 <div class="view active" id="view-tasks">
   <div class="pages-wrapper" id="pagesWrapper">
@@ -1135,23 +1190,8 @@
   </div>
 </div>
 
-<!-- CALENDAR VIEW -->
-<div class="view" id="view-calendar">
-  <div class="calendar-view">
-    <div class="calendar-nav">
-      <div>
-        <div class="page-label">All tasks</div>
-        <div class="calendar-month-label" id="calMonthLabel"></div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button class="calendar-nav-btn" onclick="calNav(-1)">← Prev</button>
-        <button class="calendar-nav-btn" onclick="calNav(0)">Today</button>
-        <button class="calendar-nav-btn" onclick="calNav(1)">Next →</button>
-      </div>
-    </div>
-    <div class="calendar-grid" id="calGrid"></div>
-  </div>
-</div>
+</div><!-- end .app-content -->
+</div><!-- end .app-layout -->
 
 <!-- ADD/EDIT MODAL -->
 <div class="overlay" id="taskOverlay" onclick="overlayClickClose(event)">
@@ -1318,11 +1358,15 @@ async function apiDeleteGroup(id) {
   await fetch(API + '/api/groups/' + id, { method: 'DELETE' });
 }
 
-let lastNonCalendarView = 'tasks';
+let calendarOpen = false;
 
 function toggleCalendarView() {
-  const isCalendar = document.getElementById('view-calendar').classList.contains('active');
-  showView(isCalendar ? lastNonCalendarView : 'calendar');
+  calendarOpen = !calendarOpen;
+  const panel = document.getElementById('calendarPanel');
+  const btn = document.getElementById('calToggleBtn');
+  panel.classList.toggle('open', calendarOpen);
+  btn.classList.toggle('active', calendarOpen);
+  if (calendarOpen) renderCalendar();
 }
 
 async function showView(v) {
@@ -1330,18 +1374,10 @@ async function showView(v) {
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-pill').forEach(el => el.classList.remove('active'));
   document.getElementById('view-' + v).classList.add('active');
-  const calBtn = document.getElementById('calToggleBtn');
-  if (v === 'calendar') {
-    calBtn.classList.add('active');
-  } else {
-    calBtn.classList.remove('active');
-    lastNonCalendarView = v;
-    const idx = ['tasks','valhalla','graveyard'].indexOf(v);
-    if (idx !== -1) document.querySelectorAll('.nav-pill')[idx].classList.add('active');
-  }
+  const idx = ['tasks','valhalla','graveyard'].indexOf(v);
+  if (idx !== -1) document.querySelectorAll('.nav-pill')[idx].classList.add('active');
   if (v === 'valhalla') renderValhalla();
   else if (v === 'graveyard') renderGraveyard();
-  else if (v === 'calendar') renderCalendar();
   else renderAll();
 }
 
