@@ -857,6 +857,30 @@
   .depends-item input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
   .depends-item:hover { color: var(--text); }
 
+  /* CALENDAR TOGGLE BUTTON */
+  .cal-toggle-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.18s;
+  }
+
+  .cal-toggle-btn:hover { background: var(--surface2); color: var(--text); border-color: #444; }
+
+  .cal-toggle-btn.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
   /* CALENDAR VIEW */
   .calendar-view {
     padding: 28px;
@@ -1000,11 +1024,22 @@
 
 <div class="topbar">
   <div class="logo">task<span>flow</span></div>
-  <div class="nav-pills">
-    <button class="nav-pill active" onclick="showView('tasks')">Tasks</button>
-    <button class="nav-pill" onclick="showView('calendar')">Calendar</button>
-    <button class="nav-pill" onclick="showView('valhalla')">Valhalla</button>
-    <button class="nav-pill" onclick="showView('graveyard')">Graveyard</button>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button class="cal-toggle-btn" id="calToggleBtn" onclick="toggleCalendarView()" title="Calendar view">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+        <rect x="1.5" y="3" width="13" height="11.5" rx="2" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M1.5 6.5h13" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M5 1.5v3M11 1.5v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        <rect x="3.5" y="9" width="2" height="2" rx="0.4" fill="currentColor"/>
+        <rect x="7" y="9" width="2" height="2" rx="0.4" fill="currentColor"/>
+        <rect x="10.5" y="9" width="2" height="2" rx="0.4" fill="currentColor"/>
+      </svg>
+    </button>
+    <div class="nav-pills">
+      <button class="nav-pill active" onclick="showView('tasks')">Tasks</button>
+      <button class="nav-pill" onclick="showView('valhalla')">Valhalla</button>
+      <button class="nav-pill" onclick="showView('graveyard')">Graveyard</button>
+    </div>
   </div>
 </div>
 
@@ -1282,13 +1317,27 @@ async function apiDeleteGroup(id) {
   await fetch(API + '/api/groups/' + id, { method: 'DELETE' });
 }
 
+let lastNonCalendarView = 'tasks';
+
+function toggleCalendarView() {
+  const isCalendar = document.getElementById('view-calendar').classList.contains('active');
+  showView(isCalendar ? lastNonCalendarView : 'calendar');
+}
+
 async function showView(v) {
   await apiLoad();
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-pill').forEach(el => el.classList.remove('active'));
   document.getElementById('view-' + v).classList.add('active');
-  const idx = ['tasks','calendar','valhalla','graveyard'].indexOf(v);
-  document.querySelectorAll('.nav-pill')[idx].classList.add('active');
+  const calBtn = document.getElementById('calToggleBtn');
+  if (v === 'calendar') {
+    calBtn.classList.add('active');
+  } else {
+    calBtn.classList.remove('active');
+    lastNonCalendarView = v;
+    const idx = ['tasks','valhalla','graveyard'].indexOf(v);
+    if (idx !== -1) document.querySelectorAll('.nav-pill')[idx].classList.add('active');
+  }
   if (v === 'valhalla') renderValhalla();
   else if (v === 'graveyard') renderGraveyard();
   else if (v === 'calendar') renderCalendar();
