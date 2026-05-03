@@ -916,6 +916,36 @@
     color: var(--accent);
   }
 
+  .archive-tabs-bar {
+    display: flex;
+    gap: 0;
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .archive-tab {
+    padding: 8px 18px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.18s;
+    margin-bottom: -1px;
+  }
+
+  .archive-tab.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+
+  .archive-tab:hover:not(.active) { color: var(--text); }
+
   /* CALENDAR VIEW */
   .calendar-view {
     padding: 14px 24px 10px;
@@ -1070,11 +1100,13 @@
         <rect x="10.5" y="9" width="2" height="2" rx="0.4" fill="currentColor"/>
       </svg>
     </button>
-    <div class="nav-pills">
-      <button class="nav-pill active" onclick="showView('tasks')">Tasks</button>
-      <button class="nav-pill" onclick="showView('valhalla')">Valhalla</button>
-      <button class="nav-pill" onclick="showView('graveyard')">Graveyard</button>
-    </div>
+    <button class="cal-toggle-btn" id="archiveToggleBtn" onclick="toggleArchiveView()" title="Valhalla &amp; Graveyard">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+        <rect x="1.5" y="6" width="13" height="8.5" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M1.5 6h13l-1.5-4H3L1.5 6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+        <path d="M6 9.5h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </button>
   </div>
 </div>
 
@@ -1145,44 +1177,48 @@
   </div>
 </div>
 
-<!-- VALHALLA VIEW -->
-<div class="view" id="view-valhalla">
+<!-- ARCHIVE VIEW (Valhalla + Graveyard) -->
+<div class="view" id="view-archive">
   <div class="graveyard-view">
-    <div class="graveyard-header">
-      <div>
-        <div class="page-label">Completed</div>
-        <div class="page-title" style="font-family:'Instrument Serif',serif;font-size:2rem;letter-spacing:-0.02em;color:var(--accent);">Valhalla. ⚔️</div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <span class="completed-count" id="valhalla-count">0 tasks</span>
-        <button class="btn" style="color:var(--danger);border-color:#3a1515;" onclick="clearAllValhalla()">Clear all</button>
-      </div>
+    <div class="archive-tabs-bar">
+      <button class="archive-tab active" id="tab-valhalla" onclick="switchArchiveTab('valhalla')">Valhalla ⚔️</button>
+      <button class="archive-tab" id="tab-graveyard" onclick="switchArchiveTab('graveyard')">Graveyard 🪦</button>
     </div>
-    <div class="task-list" id="list-valhalla"></div>
-    <div class="empty-state" id="empty-valhalla">
-      <div class="empty-icon">⚔️</div>
-      <p>No completed tasks yet.<br>Honourably finished tasks rest here.</p>
-    </div>
-  </div>
-</div>
 
-<!-- GRAVEYARD VIEW -->
-<div class="view" id="view-graveyard">
-  <div class="graveyard-view">
-    <div class="graveyard-header">
-      <div>
-        <div class="page-label">Deleted</div>
-        <div class="page-title" style="font-family:'Instrument Serif',serif;font-size:2rem;letter-spacing:-0.02em;">The graveyard. 🪦</div>
+    <div id="archive-section-valhalla">
+      <div class="graveyard-header">
+        <div>
+          <div class="page-label">Completed</div>
+          <div class="page-title" style="font-family:'Instrument Serif',serif;font-size:2rem;letter-spacing:-0.02em;color:var(--accent);">Valhalla. ⚔️</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="completed-count" id="valhalla-count">0 tasks</span>
+          <button class="btn" style="color:var(--danger);border-color:#3a1515;" onclick="clearAllValhalla()">Clear all</button>
+        </div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <span class="completed-count" id="graveyard-count">0 tasks</span>
-        <button class="btn" style="color:var(--danger);border-color:#3a1515;" onclick="clearAllGraveyard()">Clear all</button>
+      <div class="task-list" id="list-valhalla"></div>
+      <div class="empty-state" id="empty-valhalla">
+        <div class="empty-icon">⚔️</div>
+        <p>No completed tasks yet.<br>Honourably finished tasks rest here.</p>
       </div>
     </div>
-    <div class="task-list" id="list-graveyard"></div>
-    <div class="empty-state" id="empty-graveyard">
-      <div class="empty-icon">🪦</div>
-      <p>Nothing deleted yet.<br>Forgotten tasks end up here.</p>
+
+    <div id="archive-section-graveyard" style="display:none">
+      <div class="graveyard-header">
+        <div>
+          <div class="page-label">Deleted</div>
+          <div class="page-title" style="font-family:'Instrument Serif',serif;font-size:2rem;letter-spacing:-0.02em;">The graveyard. 🪦</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="completed-count" id="graveyard-count">0 tasks</span>
+          <button class="btn" style="color:var(--danger);border-color:#3a1515;" onclick="clearAllGraveyard()">Clear all</button>
+        </div>
+      </div>
+      <div class="task-list" id="list-graveyard"></div>
+      <div class="empty-state" id="empty-graveyard">
+        <div class="empty-icon">🪦</div>
+        <p>Nothing deleted yet.<br>Forgotten tasks end up here.</p>
+      </div>
     </div>
   </div>
 </div>
@@ -1293,6 +1329,8 @@ let modalType = 'now';
 let timerEnabled = false;
 let timerType = 'duration';
 let currentPage = 0;
+let currentView = 'tasks';
+let currentArchiveTab = 'valhalla';
 
 // API base — empty string means same host (served from the Pi itself)
 const API = '';
@@ -1358,6 +1396,7 @@ async function apiDeleteGroup(id) {
 let calendarOpen = false;
 
 function toggleCalendarView() {
+  if (currentView !== 'tasks') return;
   calendarOpen = !calendarOpen;
   const panel = document.getElementById('calendarPanel');
   const btn = document.getElementById('calToggleBtn');
@@ -1366,16 +1405,42 @@ function toggleCalendarView() {
   if (calendarOpen) renderCalendar();
 }
 
+function toggleArchiveView() {
+  if (currentView !== 'archive') {
+    showView('archive');
+  } else {
+    showView('tasks');
+  }
+}
+
+function switchArchiveTab(tab) {
+  currentArchiveTab = tab;
+  document.getElementById('archive-section-valhalla').style.display = tab === 'valhalla' ? 'block' : 'none';
+  document.getElementById('archive-section-graveyard').style.display = tab === 'graveyard' ? 'block' : 'none';
+  document.getElementById('tab-valhalla').classList.toggle('active', tab === 'valhalla');
+  document.getElementById('tab-graveyard').classList.toggle('active', tab === 'graveyard');
+  if (tab === 'valhalla') renderValhalla();
+  else renderGraveyard();
+}
+
 async function showView(v) {
   await apiLoad();
+  currentView = v;
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.nav-pill').forEach(el => el.classList.remove('active'));
-  document.getElementById('view-' + v).classList.add('active');
-  const idx = ['tasks','valhalla','graveyard'].indexOf(v);
-  if (idx !== -1) document.querySelectorAll('.nav-pill')[idx].classList.add('active');
-  if (v === 'valhalla') renderValhalla();
-  else if (v === 'graveyard') renderGraveyard();
-  else renderAll();
+  document.getElementById('archiveToggleBtn').classList.toggle('active', v === 'archive');
+  if (v === 'archive') {
+    if (calendarOpen) {
+      calendarOpen = false;
+      document.getElementById('calendarPanel').classList.remove('open');
+      document.getElementById('calToggleBtn').classList.remove('active');
+    }
+    document.getElementById('view-archive').classList.add('active');
+    if (currentArchiveTab === 'valhalla') renderValhalla();
+    else renderGraveyard();
+  } else {
+    document.getElementById('view-tasks').classList.add('active');
+    renderAll();
+  }
 }
 
 function goToPage(n) {
