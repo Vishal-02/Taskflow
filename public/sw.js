@@ -1,4 +1,4 @@
-const CACHE = 'taskflow-v1';
+const CACHE = 'taskflow-v2';
 const ASSETS = ['/taskflow.html', '/manifest.json'];
 
 self.addEventListener('install', e => {
@@ -7,18 +7,44 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(clients.claim());
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => clients.claim())
+  );
 });
 
 self.addEventListener('fetch', e => {
-  // Always go network-first for API calls
   if (e.request.url.includes('/api/')) {
     e.respondWith(fetch(e.request));
     return;
   }
-  // Cache-first for static assets
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
   );
 });
 
+self.addEventListener('push', e => {
+  const data = e.data ? e.data.json() : { title: 'Taskflow', body: 'Timer expired' };
+  e.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: data.icon || '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: 'taskflow-timer',
+      renotify: true
+    })
+  );
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const client of list) {
+        if (client.url.includes('/taskflow') && 'focus' in client) return client.focus();
+      }
+      return clients.openWindow('/taskflow.html');
+    })
+  );
+});

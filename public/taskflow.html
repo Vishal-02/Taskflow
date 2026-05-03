@@ -122,6 +122,11 @@
     scrollbar-color: var(--border) transparent;
   }
 
+  .page-inner {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
   /* PAGE HEADER */
   .page-header {
     display: flex;
@@ -1135,41 +1140,45 @@
 
       <!-- PAGE: NOW -->
       <div class="page" id="page-now">
-        <div class="page-header">
-          <div class="page-title-block">
-            <div class="page-label">01 / active</div>
-            <div class="page-title now">Do it now.</div>
+        <div class="page-inner">
+          <div class="page-header">
+            <div class="page-title-block">
+              <div class="page-label">01 / active</div>
+              <div class="page-title now">Do it now.</div>
+            </div>
+            <div class="page-actions">
+              <div class="swipe-hint" onclick="goToPage(1)">Waiting →</div>
+              <button class="btn" onclick="openCreateGroupModal('now')" style="color:var(--text-muted);">+ Group</button>
+              <button class="btn primary" onclick="openAddModal('now')">+ Add</button>
+            </div>
           </div>
-          <div class="page-actions">
-            <div class="swipe-hint" onclick="goToPage(1)">Waiting →</div>
-            <button class="btn" onclick="openCreateGroupModal('now')" style="color:var(--text-muted);">+ Group</button>
-            <button class="btn primary" onclick="openAddModal('now')">+ Add</button>
+          <div class="task-list" id="list-now"></div>
+          <div class="empty-state" id="empty-now">
+            <div class="empty-icon">✦</div>
+            <p>No active tasks.<br>Add something to get started.</p>
           </div>
-        </div>
-        <div class="task-list" id="list-now"></div>
-        <div class="empty-state" id="empty-now">
-          <div class="empty-icon">✦</div>
-          <p>No active tasks.<br>Add something to get started.</p>
         </div>
       </div>
 
       <!-- PAGE: WAITING -->
       <div class="page" id="page-waiting">
-        <div class="page-header">
-          <div class="page-title-block">
-            <div class="page-label">02 / waiting</div>
-            <div class="page-title waiting">On hold.</div>
+        <div class="page-inner">
+          <div class="page-header">
+            <div class="page-title-block">
+              <div class="page-label">02 / waiting</div>
+              <div class="page-title waiting">On hold.</div>
+            </div>
+            <div class="page-actions">
+              <div class="swipe-hint" onclick="goToPage(0)">← Now</div>
+              <button class="btn" onclick="openCreateGroupModal('waiting')" style="color:var(--text-muted);">+ Group</button>
+              <button class="btn waiting-btn" onclick="openAddModal('waiting')">+ Add</button>
+            </div>
           </div>
-          <div class="page-actions">
-            <div class="swipe-hint" onclick="goToPage(0)">← Now</div>
-            <button class="btn" onclick="openCreateGroupModal('waiting')" style="color:var(--text-muted);">+ Group</button>
-            <button class="btn waiting-btn" onclick="openAddModal('waiting')">+ Add</button>
+          <div class="task-list" id="list-waiting"></div>
+          <div class="empty-state" id="empty-waiting">
+            <div class="empty-icon">◌</div>
+            <p>Nothing waiting.<br>Tasks blocked by others go here.</p>
           </div>
-        </div>
-        <div class="task-list" id="list-waiting"></div>
-        <div class="empty-state" id="empty-waiting">
-          <div class="empty-icon">◌</div>
-          <p>Nothing waiting.<br>Tasks blocked by others go here.</p>
         </div>
       </div>
 
@@ -1395,8 +1404,15 @@ async function apiDeleteGroup(id) {
 
 let calendarOpen = false;
 
-function toggleCalendarView() {
-  if (currentView !== 'tasks') return;
+async function toggleCalendarView() {
+  if (currentView !== 'tasks') {
+    await showView('tasks');
+    calendarOpen = true;
+    document.getElementById('calendarPanel').classList.add('open');
+    document.getElementById('calToggleBtn').classList.add('active');
+    renderCalendar();
+    return;
+  }
   calendarOpen = !calendarOpen;
   const panel = document.getElementById('calendarPanel');
   const btn = document.getElementById('calToggleBtn');
@@ -2431,12 +2447,41 @@ function renderCalendar() {
   }
 }
 
+function urlBase64ToUint8Array(b64) {
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const base64 = (b64 + pad).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+async function subscribeToPush(registration) {
+  try {
+    const existing = await registration.pushManager.getSubscription();
+    if (existing) return;
+    const { key } = await fetch('/api/push/vapid-public-key').then(r => r.json());
+    const sub = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(key)
+    });
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sub)
+    });
+  } catch(e) {}
+}
+
 // Init
 async function init() {
   await apiLoad();
   renderAll();
   if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
-    Notification.requestPermission().catch(() => {});
+    Notification.requestPermission().then(async permission => {
+      if (permission === 'granted') {
+        const reg = await navigator.serviceWorker.ready;
+        subscribeToPush(reg);
+      }
+    }).catch(() => {});
   }
   setInterval(checkTimers, 10000);
   checkTimers();
@@ -2445,7 +2490,12 @@ async function init() {
 init();
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {});
+  navigator.serviceWorker.register('/sw.js').then(async () => {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      const reg = await navigator.serviceWorker.ready;
+      subscribeToPush(reg);
+    }
+  }).catch(() => {});
 }
 </script>
 </body>
